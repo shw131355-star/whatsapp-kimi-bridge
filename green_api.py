@@ -1,5 +1,8 @@
+import logging
 import httpx
 import config
+
+logger = logging.getLogger(__name__)
 
 
 def _base_url() -> str:
@@ -9,6 +12,7 @@ def _base_url() -> str:
 
 def send_message(chat_id: str, message: str) -> bool:
     if not message or not message.strip():
+        logger.warning("Refusing to send empty message")
         return False
 
     url = f"{_base_url()}/waInstance{config.GREEN_API_INSTANCE_ID}/sendMessage/{config.GREEN_API_TOKEN}"
@@ -21,11 +25,15 @@ def send_message(chat_id: str, message: str) -> bool:
         "message": message
     }
 
+    logger.info("Sending WhatsApp message to %s", chat_id)
     try:
         response = httpx.post(url, json=payload, timeout=30.0)
+        logger.info("Green API send_message status: %s", response.status_code)
+        if response.status_code != 200:
+            logger.warning("Green API send_message body: %s", response.text)
         return response.status_code == 200
     except Exception as e:
-        print(f"Error sending message: {e}")
+        logger.exception("Error sending message")
         return False
 
 
@@ -46,9 +54,10 @@ def set_webhook(webhook_url: str) -> bool:
 
     try:
         response = httpx.post(url, json=payload, timeout=30.0)
+        logger.info("Green API set_webhook status: %s", response.status_code)
         return response.status_code == 200
     except Exception as e:
-        print(f"Error setting webhook: {e}")
+        logger.exception("Error setting webhook")
         return False
 
 
@@ -58,7 +67,9 @@ def parse_webhook(data: dict) -> dict:
         "sender_phone": "",
         "sender_name": "",
         "text": "",
-        "chat_id": ""
+        "chat_id": "",
+        "image_url": "",
+        "caption": ""
     }
 
     if result["type"] != "incomingMessageReceived":
@@ -78,5 +89,10 @@ def parse_webhook(data: dict) -> dict:
     elif type_message == "extendedTextMessage":
         text_data = message_data.get("extendedTextMessageData", {})
         result["text"] = text_data.get("text", "")
+    elif type_message == "imageMessage":
+        file_data = message_data.get("fileMessageData", {})
+        result["image_url"] = file_data.get("downloadUrl", "")
+        result["caption"] = file_data.get("caption", "")
+        result["text"] = result["caption"]
 
     return result
