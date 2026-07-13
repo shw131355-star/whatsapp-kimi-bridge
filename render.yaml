@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: whatsapp-kimi-bridge
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GREEN_API_URL
+        sync: false
+      - key: GREEN_API_INSTANCE_ID
+        sync: false
+      - key: GREEN_API_TOKEN
+        sync: false
+      - key: KIMI_API_KEY
+        sync: false
+      - key: KIMI_DEFAULT_MODEL
+        value: kimi-k2
+      - key: KIMI_MAX_HISTORY
+        value: "50"
+      - key: THINKING_ENABLED_DEFAULT
+        value: "false"
+      - key: ALLOWED_PHONES
+        sync: false
