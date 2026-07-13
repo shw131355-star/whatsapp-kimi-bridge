@@ -1,10 +1,11 @@
+import asyncio
 import logging
 import os
 import re
 from contextlib import asynccontextmanager
 
 import httpx
-from fastapi import FastAPI, Request, Response, BackgroundTasks
+from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 
 import config
@@ -64,7 +65,7 @@ async def test_openrouter(request: Request):
 
 
 @app.post("/webhook")
-async def webhook(request: Request, background_tasks: BackgroundTasks):
+async def webhook(request: Request):
     try:
         data = await request.json()
     except Exception as e:
@@ -72,8 +73,8 @@ async def webhook(request: Request, background_tasks: BackgroundTasks):
         return Response(status_code=200)
 
     parsed = green_api.parse_webhook(data)
-    logger.info("Webhook received: type=%s sender=%s text=%s image=%s",
-                parsed["type"], parsed["sender_phone"], parsed["text"], bool(parsed["image_url"]))
+    logger.info("Webhook received: type=%s sender=%s text=%s image=%s audio=%s",
+                parsed["type"], parsed["sender_phone"], parsed["text"], bool(parsed["image_url"]), bool(parsed["audio_url"]))
 
     if parsed["type"] != "incomingMessageReceived":
         logger.info("Ignoring non-message webhook type: %s", parsed["type"])
@@ -98,7 +99,7 @@ async def webhook(request: Request, background_tasks: BackgroundTasks):
 
     is_girlfriend = config.is_girlfriend_phone(sender_phone)
 
-    background_tasks.add_task(_process_webhook, sender_phone, text or "", image_url, audio_url, is_girlfriend)
+    asyncio.create_task(_process_webhook(sender_phone, text or "", image_url, audio_url, is_girlfriend))
     return Response(status_code=200)
 
 
