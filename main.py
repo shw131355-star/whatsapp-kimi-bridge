@@ -15,6 +15,7 @@ import commands
 import kimi_api
 import openrouter_api
 import image_gen
+import voice
 
 logging.basicConfig(
     level=logging.INFO,
@@ -81,13 +82,14 @@ async def webhook(request: Request, background_tasks: BackgroundTasks):
     sender_phone = parsed["sender_phone"]
     text = parsed["text"]
     image_url = parsed["image_url"]
+    audio_url = parsed["audio_url"]
 
     if not sender_phone:
         logger.warning("Missing sender_phone in webhook")
         return Response(status_code=200)
 
-    if not text and not image_url:
-        logger.warning("No text or image in webhook")
+    if not text and not image_url and not audio_url:
+        logger.warning("No text or image or audio in webhook")
         return Response(status_code=200)
 
     if not config.is_phone_allowed(sender_phone):
@@ -96,14 +98,14 @@ async def webhook(request: Request, background_tasks: BackgroundTasks):
 
     is_girlfriend = config.is_girlfriend_phone(sender_phone)
 
-    background_tasks.add_task(_process_webhook, sender_phone, text or "", image_url, is_girlfriend)
+    background_tasks.add_task(_process_webhook, sender_phone, text or "", image_url, audio_url, is_girlfriend)
     return Response(status_code=200)
 
 
-async def _process_webhook(sender_phone: str, text: str, image_url: str, is_girlfriend: bool):
+async def _process_webhook(sender_phone: str, text: str, image_url: str, audio_url: str, is_girlfriend: bool):
     try:
         if is_girlfriend:
-            await _handle_girlfriend_message(sender_phone, text, image_url)
+            await _handle_girlfriend_message(sender_phone, text, image_url, audio_url)
         else:
             await _handle_kimi_message(sender_phone, text)
     except Exception as e:
@@ -188,7 +190,7 @@ def _extract_photo_description(text: str) -> str:
     return cleaned or "realistic photo of Maya"
 
 
-async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: str):
+async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: str, audio_url: str = ""):
     user = conversation.get_or_create_user(
         sender_phone,
         default_model=config.OPENROUTER_MODEL,
@@ -232,11 +234,20 @@ async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: st
             return
 
     user_text = text
-    if image_url and not user_text:
+    if audio_url:
+        logger.info("Transcribing audio for %s", sender_phone)
+        transcribed = await voice.transcribe_audio(audio_url)
+        if transcribed:
+            user_text = transcribed
+            logger.info("Audio transcribed: %s", user_text[:100])
+        else:
+            user_text = "[שלחתי הודעה קולית שאני לא הצלחתי להבין]"
+            logger.warning("Failed to transcribe audio for %s", sender_phone)
+    elif image_url and not user_text:
         user_text = "שלחתי לך תמונה"
 
     conversation.add_message(conv["id"], "user", user_text, image_url=image_url)
-    logger.info("Girlfriend user message saved to conversation %s (image=%s)", conv["id"], bool(image_url))
+    logger.info("Girlfriend user message saved to conversation %s (image=%s audio=%s)", conv["id"], bool(image_url), bool(audio_url))
 
     # Build recent context for image detection
     recent_messages = conversation.get_messages(conv["id"], limit=6)
@@ -244,8 +255,8 @@ async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: st
     recent_context = "\n".join(context_lines)
 
     # Natural photo request
-    if _is_photo_request(text, recent_context) and not image_url:
-        logger.info("Detected natural photo request: %s", text)
+    if _is_photo_request(user_text, recent_context) and not image_url and not audio_url:
+        logger.info("Detected natural photo request: %s", user_text)
         description = _extract_photo_description(text)
         english_prompt = openrouter_api.generate_image_prompt(description)
         generated_url = image_gen.generate_girlfriend_image_url(english_prompt, seed=123456)
@@ -297,8 +308,18 @@ async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: st
     conversation.add_message(conv["id"], "assistant", reply)
     logger.info("Girlfriend reply saved to conversation %s", conv["id"])
 
-    sent = green_api.send_message(sender_phone, reply)
-    logger.info("Girlfriend reply sent to %s: success=%s", sender_phone, sent)
+    if audio_url:
+        try:
+            audio_bytes = await voice.text_to_speech(reply)
+            sent = green_api.send_file_by_upload(sender_phone, audio_bytes, filename="voice.mp3")
+            logger.info("Voice reply sent to %s: success=%s", sender_phone, sent)
+        except Exception as e:
+            logger.warning("Failed to send voice reply, sending text: %s", e)
+            sent = green_api.send_message(sender_phone, reply)
+            logger.info("Text reply sent to %s: success=%s", sender_phone, sent)
+    else:
+        sent = green_api.send_message(sender_phone, reply)
+        logger.info("Girlfriend reply sent to %s: success=%s", sender_phone, sent)
 
 
 @app.post("/set-webhook")

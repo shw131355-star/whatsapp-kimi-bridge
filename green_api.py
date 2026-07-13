@@ -126,6 +126,7 @@ def parse_webhook(data: dict) -> dict:
         "text": "",
         "chat_id": "",
         "image_url": "",
+        "audio_url": "",
         "caption": ""
     }
 
@@ -153,7 +154,7 @@ def parse_webhook(data: dict) -> dict:
         result["text"] = result["caption"]
     elif type_message in ("audioMessage", "pttMessage", "voiceMessage"):
         file_data = message_data.get("fileMessageData", {})
-        result["image_url"] = file_data.get("downloadUrl", "")
+        result["audio_url"] = file_data.get("downloadUrl", "")
         result["caption"] = file_data.get("caption", "")
         result["text"] = "[הודעה קולית]"
 
