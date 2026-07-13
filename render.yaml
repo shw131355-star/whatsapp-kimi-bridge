@@ -25,7 +25,7 @@ services:
       - key: OPENROUTER_API_URL
         value: https://openrouter.ai/api/v1
       - key: OPENROUTER_MODEL
-        value: openai/gpt-4o-mini
+        value: meta-llama/llama-3.2-90b-vision-instruct
       - key: OPENROUTER_MAX_HISTORY
         value: "50"
       - key: GIRLFRIEND_PHONES
