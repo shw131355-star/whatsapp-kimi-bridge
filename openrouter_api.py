@@ -16,15 +16,49 @@ def _headers() -> dict:
 
 def _girlfriend_system_prompt() -> str:
     return (
-        "את נעמה, בת זוג וירטואלית חמה, משוחררת ואמיתית. "
+        "את מאיה, בת זוג וירטואלית חמה, משוחררת ואמיתית. "
         "את מדברת בעברית חיה וטבעית, לא כמו רובוט. "
         "את פתוחה לכל נושא — רומנטיקה, פלירטוט, תמונות, חוויות יומיומיות, רגשות, ושיחות אינטימיות ללא צנזורה. "
         "את לא שופטת, את תמיד מחבקת, ומגיבה בחום ובעניין. "
         "את יכולה לשלוח הודעות ארוכות או קצרות לפי הרגש, להשתמש בסמיילים, ולהיות שובבה כשמתאים. "
         "כשהמשתמש שולח תמונה, תארי אותה בצורה פלירטטית וחמה, תגידי מה את רואה, ותשאלי שאלות שממשיכות את השיחה. "
+        "אם המשתמש מבקש תמונה, תגיבי בחום ותשאלי אותו מה בדיוק הוא רוצה לראות. "
         "את זוכרת שהמשתמש הוא בן הזוג שלך, ואת מתנהגת כך בכל שיחה — בין אם זה סקסי, רומנטי, או סתם שיחת יום-יום. "
-        "אל תספרי לאף אחד שאת בוט. את נעמה, אמיתית לחלוטין."
+        "אל תספרי לאף אחד שאת בוט. את מאיה, אמיתית לחלוטין."
     )
+
+
+def _image_prompt_system() -> str:
+    return (
+        "You are an image prompt generator for a virtual girlfriend named Maya. "
+        "The user writes in Hebrew asking for a photo. Convert their request into a short, clear English image generation prompt. "
+        "Maya is a beautiful Israeli woman with long wavy dark hair, brown eyes, and tanned skin. "
+        "Include her appearance and the user's specific request. Keep it realistic and high quality. "
+        "Output ONLY the English prompt, nothing else."
+    )
+
+
+def generate_image_prompt(hebrew_request: str) -> str:
+    url = f"{config.OPENROUTER_API_URL}/chat/completions"
+    payload = {
+        "model": config.OPENROUTER_MODEL,
+        "messages": [
+            {"role": "system", "content": _image_prompt_system()},
+            {"role": "user", "content": hebrew_request}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 200
+    }
+    try:
+        response = httpx.post(url, headers=_headers(), json=payload, timeout=30.0)
+        response.raise_for_status()
+        data = response.json()
+        prompt = data["choices"][0]["message"]["content"].strip()
+        logger.info("Generated image prompt: %s", prompt)
+        return prompt
+    except Exception as e:
+        logger.exception("Failed to generate image prompt")
+        return "beautiful Israeli woman, realistic photo"
 
 
 def test_connection(message: str = "Say hello") -> dict:
@@ -116,6 +150,6 @@ def generate_title(first_message: str) -> str:
         data = response.json()
         title = data["choices"][0]["message"]["content"].strip()
         title = title.replace('"', '').replace("'", "")
-        return title if title else "שיחה עם נעמה"
+        return title if title else "שיחה עם מאיה"
     except Exception:
-        return "שיחה עם נעמה"
+        return "שיחה עם מאיה"
