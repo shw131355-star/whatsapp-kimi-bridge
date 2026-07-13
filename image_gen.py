@@ -8,11 +8,11 @@ logger = logging.getLogger(__name__)
 
 def generate_girlfriend_image_url(english_prompt: str = "", seed: int = None) -> str:
     base_prompt = (
-        "casual photo of Maya, a 19 year old Israeli girl, "
-        "soft feminine face, gentle features, dark brown wavy hair, "
-        "warm brown eyes, olive skin, natural light makeup, "
-        "real young woman next door look, not a model, "
-        "natural lighting, realistic skin texture, selfie style photo, "
+        "attractive young Israeli woman age 19, gentle feminine features, "
+        "smooth olive skin, warm brown eyes, dark brown wavy hair, "
+        "subtle natural makeup, friendly warm expression, "
+        "pretty but normal girl next door look, not a model, "
+        "natural bedroom lighting, realistic skin texture, casual selfie style, "
         "same face in every photo, consistent facial features"
     )
 
