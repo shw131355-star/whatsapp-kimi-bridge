@@ -4,7 +4,7 @@ import re
 from contextlib import asynccontextmanager
 
 import httpx
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, BackgroundTasks
 from fastapi.responses import JSONResponse
 
 import config
@@ -63,7 +63,7 @@ async def test_openrouter(request: Request):
 
 
 @app.post("/webhook")
-async def webhook(request: Request):
+async def webhook(request: Request, background_tasks: BackgroundTasks):
     try:
         data = await request.json()
     except Exception as e:
@@ -95,22 +95,23 @@ async def webhook(request: Request):
         return Response(status_code=200)
 
     is_girlfriend = config.is_girlfriend_phone(sender_phone)
-    personality = "girlfriend" if is_girlfriend else "kimi"
 
+    background_tasks.add_task(_process_webhook, sender_phone, text or "", image_url, is_girlfriend)
+    return Response(status_code=200)
+
+
+async def _process_webhook(sender_phone: str, text: str, image_url: str, is_girlfriend: bool):
     try:
         if is_girlfriend:
-            await _handle_girlfriend_message(sender_phone, text or "", image_url)
+            await _handle_girlfriend_message(sender_phone, text, image_url)
         else:
-            await _handle_kimi_message(sender_phone, text or "")
-
+            await _handle_kimi_message(sender_phone, text)
     except Exception as e:
         logger.exception("Error handling webhook from %s", sender_phone)
         try:
             green_api.send_message(sender_phone, f"שגיאה בשרת: {str(e)}")
         except Exception as inner:
             logger.error("Failed to send error message: %s", inner)
-
-    return Response(status_code=200)
 
 
 async def _handle_kimi_message(sender_phone: str, text: str):
