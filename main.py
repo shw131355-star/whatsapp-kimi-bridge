@@ -3,6 +3,7 @@ import os
 import re
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 
@@ -204,8 +205,19 @@ async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: st
             if command_response.startswith("__SEND_IMAGE__"):
                 generated_url = command_response.replace("__SEND_IMAGE__", "")
                 caption = "הנה בשבילך 💕"
-                green_api.send_file_by_url(sender_phone, generated_url, caption)
-                logger.info("Sent generated image to %s", sender_phone)
+                success = False
+                try:
+                    img_response = httpx.get(generated_url, timeout=60.0)
+                    img_response.raise_for_status()
+                    success = green_api.send_file_by_upload(sender_phone, img_response.content, filename="image.jpg", caption=caption)
+                except Exception as e:
+                    logger.warning("Image upload failed for /img, falling back to URL: %s", e)
+                if not success:
+                    success = green_api.send_file_by_url(sender_phone, generated_url, caption)
+                if success:
+                    logger.info("Sent generated image to %s", sender_phone)
+                else:
+                    green_api.send_message(sender_phone, "מצטערת, לא הצלחתי לשלוח את התמונה 💕")
             else:
                 green_api.send_message(sender_phone, command_response)
             return
@@ -232,7 +244,20 @@ async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: st
             logger.warning("Failed to generate caption, using default: %s", e)
             caption_reply = "הנה בשבילך, אהובי 💕"
 
-        success = green_api.send_file_by_url(sender_phone, generated_url, caption_reply)
+        success = False
+        try:
+            logger.info("Downloading generated image from %s", generated_url)
+            img_response = httpx.get(generated_url, timeout=60.0)
+            img_response.raise_for_status()
+            success = green_api.send_file_by_upload(sender_phone, img_response.content, filename="image.jpg", caption=caption_reply)
+            logger.info("Image upload result for %s: %s", sender_phone, success)
+        except Exception as e:
+            logger.warning("Image upload failed, falling back to URL: %s", e)
+
+        if not success:
+            success = green_api.send_file_by_url(sender_phone, generated_url, caption_reply)
+            logger.info("Image URL send result for %s: %s", sender_phone, success)
+
         if success:
             conversation.add_message(conv["id"], "assistant", f"[תמונה] {caption_reply}")
             logger.info("Sent generated image to %s", sender_phone)
