@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
@@ -12,6 +13,7 @@ import conversation
 import commands
 import kimi_api
 import openrouter_api
+import image_gen
 
 logging.basicConfig(
     level=logging.INFO,
@@ -157,6 +159,22 @@ async def _handle_kimi_message(sender_phone: str, text: str):
     logger.info("Reply sent to %s: success=%s", sender_phone, sent)
 
 
+def _is_photo_request(text: str) -> bool:
+    keywords = [
+        "תמונה", "ביקיני", "בגד ים", "בגדים", "תלבוש", "תראי", "תשלחי",
+        "תצלמי", "תחשפי", "תתפשטי", "הראי", "שלחי לי", "תתני לי",
+        "אני רוצה לראות", "צילום", "selfie", "סלפי"
+    ]
+    lowered = text.lower()
+    return any(k in lowered for k in keywords)
+
+
+def _extract_photo_description(text: str) -> str:
+    cleaned = re.sub(r"\b(תשלחי|שלחי לי|תראי|הראי|תצלמי|תמונה|selfie|סלפי)\b", "", text, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned or "realistic photo of Maya"
+
+
 async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: str):
     user = conversation.get_or_create_user(
         sender_phone,
@@ -193,6 +211,21 @@ async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: st
 
     conversation.add_message(conv["id"], "user", user_text, image_url=image_url)
     logger.info("Girlfriend user message saved to conversation %s (image=%s)", conv["id"], bool(image_url))
+
+    # Natural photo request
+    if _is_photo_request(text) and not image_url:
+        logger.info("Detected natural photo request: %s", text)
+        description = _extract_photo_description(text)
+        english_prompt = openrouter_api.generate_image_prompt(description)
+        generated_url = image_gen.generate_girlfriend_image_url(english_prompt)
+
+        caption_reply = openrouter_api.get_response(
+            [{"role": "user", "content": text}, {"role": "assistant", "content": "הנה, אהובי 💕"}]
+        )
+        green_api.send_file_by_url(sender_phone, generated_url, caption_reply)
+        conversation.add_message(conv["id"], "assistant", f"[תמונה] {caption_reply}")
+        logger.info("Sent generated image to %s", sender_phone)
+        return
 
     if conv["title"] == "שיחה חדשה":
         title = openrouter_api.generate_title(user_text)
