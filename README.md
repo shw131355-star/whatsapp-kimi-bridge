@@ -1,12 +1,15 @@
 # WhatsApp Kimi Bridge
 
-גשר שמחבר בין WhatsApp (דרך Green API) לבין Kimi API של Moonshot AI.
+גשר שמחבר בין WhatsApp (דרך Green API) לבין Kimi API של Moonshot AI ול-OpenRouter.
 
 ## יכולות
 
 - קבלת ושליחת הודעות בוואטסאפ.
-- שיחה עם Kimi API דרך הודעות טקסט.
-- פקודות לניהול שיחות, מודלים, ומצב חשיבה.
+- שני בוטים שונים לפי מספר טלפון:
+  - **Kimi** — עוזר AI כללי (Moonshot AI).
+  - **נעמה** — חברה וירטואלית חמה ופתוחה (דרך OpenRouter).
+- קבלת תמונות מהמשתמש ותיאור פלירטטי בתשובה.
+- פקודות לניהול שיחות.
 - הגבלה למספרי טלפון מורשים בלבד.
 - שמירת היסטוריית שיחות ב-SQLite.
 
@@ -15,9 +18,9 @@
 - `/new` — פתיחת שיחה חדשה
 - `/list` — רשימת השיחות האחרונות
 - `/switch <מספר>` — מעבר לשיחה אחרת
-- `/model` — הצגת המודל הנוכחי
-- `/model <שם>` — החלפת מודל
-- `/thinking on/off` — הפעלה/כיבוי מצב חשיבה
+- `/model` — הצגת המודל הנוכחי (רק ב-Kimi)
+- `/model <שם>` — החלפת מודל (רק ב-Kimi)
+- `/thinking on/off` — הפעלה/כיבוי מצב חשיבה (רק ב-Kimi)
 - `/help` — רשימת פקודות
 
 ## משתני סביבה
@@ -28,8 +31,19 @@
 | `GREEN_API_INSTANCE_ID` | מספר ה-instance ב-Green API |
 | `GREEN_API_TOKEN` | ה-token של ה-instance |
 | `KIMI_API_KEY` | מפתח API של Kimi/Moonshot |
-| `KIMI_DEFAULT_MODEL` | מודל ברירת מחדל (ברירת מחדל: `kimi-k2`) |
+| `KIMI_API_URL` | כתובת Kimi API (ברירת מחדל: `https://api.moonshot.ai/v1`) |
+| `KIMI_DEFAULT_MODEL` | מודל ברירת מחדל ל-Kimi (ברירת מחדל: `kimi-k2.5`) |
+| `OPENROUTER_API_KEY` | מפתח API של OpenRouter לחברה הוירטואלית |
+| `OPENROUTER_MODEL` | מודל OpenRouter (ברירת מחדל: `openai/gpt-4o-mini`) |
 | `ALLOWED_PHONES` | רשימת מספרי טלפון מורשים, מופרדים בפסיקים (ריק = הכל מורשה) |
+| `GIRLFRIEND_PHONES` | מספרי טלפון שמופעלים כחברה וירטואלית (מופרדים בפסיקים) |
+
+## הגדרת ניתוב בין בוטים
+
+כל המספרים ב-`ALLOWED_PHONES` יכולים לדבר עם הבוט.
+
+- מספרים שרשומים ב-`GIRLFRIEND_PHONES` → יקבלו את **נעמה** מ-OpenRouter.
+- כל שאר המספרים המורשים → יקבלו את **Kimi**.
 
 ## פריסה ב-Render
 
@@ -47,5 +61,8 @@ export GREEN_API_URL=...
 export GREEN_API_INSTANCE_ID=...
 export GREEN_API_TOKEN=...
 export KIMI_API_KEY=...
+export OPENROUTER_API_KEY=...
+export ALLOWED_PHONES=...
+export GIRLFRIEND_PHONES=...
 uvicorn main:app --reload
 ```
