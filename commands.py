@@ -1,5 +1,6 @@
 import conversation
 import kimi_api
+import config
 
 
 def handle_command(text: str, user: dict, conv: dict) -> tuple:
@@ -12,23 +13,28 @@ def handle_command(text: str, user: dict, conv: dict) -> tuple:
     command = parts[0].lower()
     arg = parts[1].strip() if len(parts) > 1 else ""
 
+    personality = conv.get("personality", "kimi")
+    is_girlfriend = personality == "girlfriend"
+
     if command == "/help":
-        return _help_text(), True
+        return _help_text(is_girlfriend), True
 
     if command == "/new":
         new_conv = conversation.create_conversation(
             user_id=user["id"],
-            model=user.get("default_model", "kimi-k2"),
-            thinking=bool(user.get("default_thinking", 0))
+            model=conv["model"],
+            thinking=bool(conv.get("thinking", 0)),
+            personality=personality
         )
         return f"✅ נפתחה שיחה חדשה (#{new_conv['id']}).", True
 
     if command == "/list":
-        convs = conversation.list_conversations(user["id"], limit=10)
+        convs = conversation.list_conversations(user["id"], personality=personality, limit=10)
         if not convs:
             return "אין שיחות שמורות.", True
 
-        lines = ["📋 השיחות האחרונות שלך:"]
+        label = "עם נעמה" if is_girlfriend else "האחרונות שלך"
+        lines = [f"📋 השיחות {label}:"]
         for c in convs:
             active = " ✅" if c["active"] else ""
             lines.append(f"#{c['id']} — {c['title']}{active}")
@@ -45,6 +51,9 @@ def handle_command(text: str, user: dict, conv: dict) -> tuple:
         return f"❌ לא נמצאה שיחה מספר {conv_id}.", True
 
     if command == "/model":
+        if is_girlfriend:
+            return f"🤖 המודל של נעמה: {config.OPENROUTER_MODEL}", True
+
         if not arg:
             return f"🤖 המודל הנוכחי: {conv['model']}", True
 
@@ -52,6 +61,9 @@ def handle_command(text: str, user: dict, conv: dict) -> tuple:
         return f"✅ המודל עודכן ל-{arg}.", True
 
     if command == "/thinking":
+        if is_girlfriend:
+            return "🧠 מצב חשיבה לא זמין לשיחה עם נעמה.", True
+
         if arg == "on":
             conversation.update_conversation_settings(conv["id"], thinking=True)
             return "✅ מצב חשיבה מופעל.", True
@@ -65,15 +77,21 @@ def handle_command(text: str, user: dict, conv: dict) -> tuple:
     return None, False
 
 
-def _help_text() -> str:
-    return """📋 פקודות זמינות:
+def _help_text(is_girlfriend: bool = False) -> str:
+    base = """📋 פקודות זמינות:
 
 /new — פתיחת שיחה חדשה
 /list — רשימת השיחות האחרונות
 /switch <מספר> — מעבר לשיחה אחרת
-/model — הצגת המודל הנוכחי
-/model <שם> — החלפת מודל (למשל: /model kimi-k2)
-/thinking on/off — הפעלה/כיבוי מצב חשיבה
 /help — הצגת הודעה זו
+"""
+
+    if is_girlfriend:
+        return base + """
+פשוט שלחו הודעה או תמונה כדי לדבר עם נעמה."""
+
+    return base + """/model — הצגת המודל הנוכחי
+/model <שם> — החלפת מודל (למשל: /model kimi-k2.5)
+/thinking on/off — הפעלה/כיבוי מצב חשיבה
 
 פשוט שלחו הודעה כדי לדבר עם Kimi."""
