@@ -161,21 +161,27 @@ async def _handle_kimi_message(sender_phone: str, text: str):
     logger.info("Reply sent to %s: success=%s", sender_phone, sent)
 
 
-def _is_photo_request(text: str) -> bool:
+def _is_photo_request_by_keywords(text: str) -> bool:
     keywords = [
         "תמונה", "ביקיני", "בגד ים", "בגדים", "תלבוש", "תראי", "תשלחי",
         "תצלמי", "תחשפי", "תתפשטי", "הראי", "שלחי לי", "תתני לי",
         "אני רוצה לראות", "צילום", "selfie", "סלפי", "תשלחי לי",
         "תחזירי", "מראה", "ויזואלי", "הצגי", "תציגי", "תמונות",
-        "תצלום", "תצטלמת", "פוזה", "פוזה", "מצלמה", "אלבום"
+        "תצלום", "תצטלמת", "פוזה", "מצלמה", "אלבום"
     ]
     lowered = text.lower()
     return any(k in lowered for k in keywords)
 
 
+def _is_photo_request(text: str, recent_context: str = "") -> bool:
+    if _is_photo_request_by_keywords(text):
+        return True
+    return openrouter_api.detect_image_request(text, recent_context)
+
+
 def _extract_photo_description(text: str) -> str:
     cleaned = re.sub(
-        r"\b(תשלחי|שלחי לי|תראי|הראי|תצלמי|תמונה|selfie|סלפי|תשלחי|תחזירי|הצגי|תציגי)\b",
+        r"\b(תשלחי|שלחי לי|תראי|הראי|תצלמי|תמונה|selfie|סלפי|תחזירי|הצגי|תציגי)\b",
         "", text, flags=re.IGNORECASE
     )
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
@@ -232,12 +238,17 @@ async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: st
     conversation.add_message(conv["id"], "user", user_text, image_url=image_url)
     logger.info("Girlfriend user message saved to conversation %s (image=%s)", conv["id"], bool(image_url))
 
+    # Build recent context for image detection
+    recent_messages = conversation.get_messages(conv["id"], limit=6)
+    context_lines = [f"{m['role']}: {m['content'][:120]}" for m in recent_messages[:-1]]
+    recent_context = "\n".join(context_lines)
+
     # Natural photo request
-    if _is_photo_request(text) and not image_url:
+    if _is_photo_request(text, recent_context) and not image_url:
         logger.info("Detected natural photo request: %s", text)
         description = _extract_photo_description(text)
         english_prompt = openrouter_api.generate_image_prompt(description)
-        generated_url = image_gen.generate_girlfriend_image_url(english_prompt)
+        generated_url = image_gen.generate_girlfriend_image_url(english_prompt, seed=123456)
 
         try:
             caption_reply = openrouter_api.get_response(

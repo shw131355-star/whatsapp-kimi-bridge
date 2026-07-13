@@ -23,7 +23,7 @@ def handle_command(text: str, user: dict, conv: dict) -> tuple:
         if is_girlfriend:
             import openrouter_api
             english_prompt = openrouter_api.generate_image_prompt(arg)
-            generated_url = image_gen.generate_girlfriend_image_url(english_prompt)
+            generated_url = image_gen.generate_girlfriend_image_url(english_prompt, seed=123456)
             return f"__SEND_IMAGE__{generated_url}", True
         return "🤖 יצירת תמונות זמינה רק למאיה.", True
 

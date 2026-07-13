@@ -151,5 +151,10 @@ def parse_webhook(data: dict) -> dict:
         result["image_url"] = file_data.get("downloadUrl", "")
         result["caption"] = file_data.get("caption", "")
         result["text"] = result["caption"]
+    elif type_message in ("audioMessage", "pttMessage", "voiceMessage"):
+        file_data = message_data.get("fileMessageData", {})
+        result["image_url"] = file_data.get("downloadUrl", "")
+        result["caption"] = file_data.get("caption", "")
+        result["text"] = "[הודעה קולית]"
 
     return result

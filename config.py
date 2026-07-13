@@ -11,12 +11,12 @@ GREEN_API_TOKEN = os.environ.get("GREEN_API_TOKEN", "")
 KIMI_API_KEY = os.environ.get("KIMI_API_KEY", "")
 KIMI_API_URL = os.environ.get("KIMI_API_URL", "https://api.moonshot.ai/v1")
 KIMI_DEFAULT_MODEL = os.environ.get("KIMI_DEFAULT_MODEL", "kimi-k2.5")
-KIMI_MAX_HISTORY = int(os.environ.get("KIMI_MAX_HISTORY", "50"))
+KIMI_MAX_HISTORY = int(os.environ.get("KIMI_MAX_HISTORY", "20"))
 
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 OPENROUTER_API_URL = os.environ.get("OPENROUTER_API_URL", "https://openrouter.ai/api/v1")
 OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "x-ai/grok-4.3")
-OPENROUTER_MAX_HISTORY = int(os.environ.get("OPENROUTER_MAX_HISTORY", "50"))
+OPENROUTER_MAX_HISTORY = int(os.environ.get("OPENROUTER_MAX_HISTORY", "20"))
 
 GIRLFRIEND_PHONES = os.environ.get("GIRLFRIEND_PHONES", "")
 

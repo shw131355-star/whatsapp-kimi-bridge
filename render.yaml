@@ -19,7 +19,7 @@ services:
       - key: KIMI_API_URL
         value: https://api.moonshot.ai/v1
       - key: KIMI_MAX_HISTORY
-        value: "50"
+        value: "20"
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_API_URL
@@ -27,10 +27,16 @@ services:
       - key: OPENROUTER_MODEL
         value: x-ai/grok-4.3
       - key: OPENROUTER_MAX_HISTORY
-        value: "50"
+        value: "20"
       - key: GIRLFRIEND_PHONES
         sync: false
       - key: THINKING_ENABLED_DEFAULT
         value: "false"
       - key: ALLOWED_PHONES
         sync: false
+      - key: DB_PATH
+        value: /data/conversations.db
+    disk:
+      name: whatsapp-bridge-disk
+      mountPath: /data
+      sizeGB: 1

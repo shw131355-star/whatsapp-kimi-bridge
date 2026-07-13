@@ -6,11 +6,14 @@ import config
 logger = logging.getLogger(__name__)
 
 
-def generate_girlfriend_image_url(english_prompt: str = "") -> str:
+def generate_girlfriend_image_url(english_prompt: str = "", seed: int = None) -> str:
     base_prompt = (
-        "full body photo of a beautiful Israeli woman named Maya, "
-        "warm smile, long wavy dark hair, brown eyes, tanned skin, "
-        "natural lighting, realistic, high quality, intimate atmosphere"
+        "professional photo of Maya, a 26 year old Israeli woman, "
+        "oval face, full lips, straight nose, almond shaped brown eyes, "
+        "long wavy dark brown hair, warm olive skin, natural makeup, "
+        "genuine warm smile, expressive eyes, feminine and confident posture, "
+        "realistic skin texture, natural lighting, high quality photograph, "
+        "same face in every photo, consistent facial features"
     )
 
     if english_prompt:
@@ -18,7 +21,8 @@ def generate_girlfriend_image_url(english_prompt: str = "") -> str:
     else:
         full_prompt = base_prompt
 
-    seed = random.randint(1, 1000000)
+    if seed is None:
+        seed = random.randint(1, 1000000)
     width = 1024
     height = 1024
 
