@@ -15,7 +15,7 @@ KIMI_MAX_HISTORY = int(os.environ.get("KIMI_MAX_HISTORY", "50"))
 
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 OPENROUTER_API_URL = os.environ.get("OPENROUTER_API_URL", "https://openrouter.ai/api/v1")
-OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "meta-llama/llama-3.2-90b-vision-instruct")
+OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "x-ai/grok-4.3")
 OPENROUTER_MAX_HISTORY = int(os.environ.get("OPENROUTER_MAX_HISTORY", "50"))
 
 GIRLFRIEND_PHONES = os.environ.get("GIRLFRIEND_PHONES", "")

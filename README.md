@@ -35,7 +35,7 @@
 | `KIMI_API_URL` | כתובת Kimi API (ברירת מחדל: `https://api.moonshot.ai/v1`) |
 | `KIMI_DEFAULT_MODEL` | מודל ברירת מחדל ל-Kimi (ברירת מחדל: `kimi-k2.5`) |
 | `OPENROUTER_API_KEY` | מפתח API של OpenRouter למאיה |
-| `OPENROUTER_MODEL` | מודל OpenRouter (ברירת מחדל: `meta-llama/llama-3.2-90b-vision-instruct`) |
+| `OPENROUTER_MODEL` | מודל OpenRouter (ברירת מחדל: `x-ai/grok-4.3`) |
 | `ALLOWED_PHONES` | רשימת מספרי טלפון מורשים, מופרדים בפסיקים (ריק = הכל מורשה) |
 | `GIRLFRIEND_PHONES` | מספרי טלפון שמופעלים כמאיה (מופרדים בפסיקים) |
 
