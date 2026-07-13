@@ -15,9 +15,21 @@ services:
       - key: KIMI_API_KEY
         sync: false
       - key: KIMI_DEFAULT_MODEL
-        value: kimi-k2
+        value: kimi-k2.5
+      - key: KIMI_API_URL
+        value: https://api.moonshot.ai/v1
       - key: KIMI_MAX_HISTORY
         value: "50"
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_API_URL
+        value: https://openrouter.ai/api/v1
+      - key: OPENROUTER_MODEL
+        value: openai/gpt-4o-mini
+      - key: OPENROUTER_MAX_HISTORY
+        value: "50"
+      - key: GIRLFRIEND_PHONES
+        sync: false
       - key: THINKING_ENABLED_DEFAULT
         value: "false"
       - key: ALLOWED_PHONES
