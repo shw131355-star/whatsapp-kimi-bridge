@@ -178,7 +178,13 @@ async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: st
         command_response, is_command = commands.handle_command(text, user, conv)
         if is_command:
             logger.info("Girlfriend command handled: %s", text.split()[0])
-            green_api.send_message(sender_phone, command_response)
+            if command_response.startswith("__SEND_IMAGE__"):
+                generated_url = command_response.replace("__SEND_IMAGE__", "")
+                caption = "הנה בשבילך 💕"
+                green_api.send_file_by_url(sender_phone, generated_url, caption)
+                logger.info("Sent generated image to %s", sender_phone)
+            else:
+                green_api.send_message(sender_phone, command_response)
             return
 
     user_text = text
