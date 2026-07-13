@@ -5,15 +5,15 @@ import config
 logger = logging.getLogger(__name__)
 
 
-def generate_girlfriend_image_url(user_prompt: str = "") -> str:
+def generate_girlfriend_image_url(english_prompt: str = "") -> str:
     base_prompt = (
-        "full body photo of a beautiful Israeli woman named Noa, "
+        "full body photo of a beautiful Israeli woman named Maya, "
         "warm smile, long wavy dark hair, brown eyes, tanned skin, "
         "natural lighting, realistic, high quality, intimate atmosphere"
     )
 
-    if user_prompt:
-        full_prompt = f"{base_prompt}, {user_prompt}"
+    if english_prompt:
+        full_prompt = f"{base_prompt}, {english_prompt}"
     else:
         full_prompt = base_prompt
 
@@ -27,5 +27,5 @@ def generate_girlfriend_image_url(user_prompt: str = "") -> str:
         f"?seed={seed}&width={width}&height={height}&nologo=true"
     )
 
-    logger.info("Generated girlfriend image URL for prompt: %s", user_prompt)
+    logger.info("Generated Maya image URL for prompt: %s", english_prompt)
     return url
