@@ -214,7 +214,12 @@ async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: st
             logger.info("Girlfriend command handled: %s", text.split()[0])
             if command_response.startswith("__SEND_IMAGE__"):
                 generated_url = command_response.replace("__SEND_IMAGE__", "")
-                caption = "הנה בשבילך 💕"
+                img_arg = text.split(maxsplit=1)[1] if len(text.split(maxsplit=1)) > 1 else ""
+                try:
+                    caption = openrouter_api.generate_image_caption(img_arg, img_arg or "photo of Maya")
+                except Exception as e:
+                    logger.warning("Failed to generate /img caption: %s", e)
+                    caption = "הנה, רק בשבילך 😉"
                 success = False
                 try:
                     img_response = httpx.get(generated_url, timeout=60.0)
@@ -263,12 +268,10 @@ async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: st
         generated_url = image_gen.generate_girlfriend_image_url(english_prompt, seed=123456)
 
         try:
-            caption_reply = openrouter_api.get_response(
-                [{"role": "user", "content": text}, {"role": "assistant", "content": "הנה, אהובי 💕"}]
-            )
+            caption_reply = openrouter_api.generate_image_caption(user_text, english_prompt)
         except Exception as e:
             logger.warning("Failed to generate caption, using default: %s", e)
-            caption_reply = "הנה בשבילך, אהובי 💕"
+            caption_reply = "הנה, רק בשבילך 😉"
 
         success = False
         try:
