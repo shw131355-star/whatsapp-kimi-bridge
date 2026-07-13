@@ -52,7 +52,7 @@ def get_response(messages: list, model: str, thinking: bool) -> str:
     payload = {
         "model": model,
         "messages": full_messages,
-        "temperature": 0.7,
+        "temperature": 1.0,
         "max_tokens": 2000
     }
 
