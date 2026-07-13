@@ -37,6 +37,35 @@ def send_message(chat_id: str, message: str) -> bool:
         return False
 
 
+def send_file_by_url(chat_id: str, file_url: str, caption: str = "") -> bool:
+    if not file_url:
+        logger.warning("Refusing to send empty file URL")
+        return False
+
+    url = f"{_base_url()}/waInstance{config.GREEN_API_INSTANCE_ID}/sendFileByUrl/{config.GREEN_API_TOKEN}"
+
+    if not chat_id.endswith("@c.us"):
+        chat_id = f"{chat_id}@c.us"
+
+    payload = {
+        "chatId": chat_id,
+        "urlFile": file_url
+    }
+    if caption:
+        payload["caption"] = caption
+
+    logger.info("Sending WhatsApp file to %s", chat_id)
+    try:
+        response = httpx.post(url, json=payload, timeout=60.0)
+        logger.info("Green API send_file_by_url status: %s", response.status_code)
+        if response.status_code != 200:
+            logger.warning("Green API send_file_by_url body: %s", response.text)
+        return response.status_code == 200
+    except Exception as e:
+        logger.exception("Error sending file")
+        return False
+
+
 def set_webhook(webhook_url: str) -> bool:
     url = f"{_base_url()}/waInstance{config.GREEN_API_INSTANCE_ID}/setSettings/{config.GREEN_API_TOKEN}"
 
