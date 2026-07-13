@@ -21,6 +21,8 @@
 - `/model` — הצגת המודל הנוכחי (רק ב-Kimi)
 - `/model <שם>` — החלפת מודל (רק ב-Kimi)
 - `/thinking on/off` — הפעלה/כיבוי מצב חשיבה (רק ב-Kimi)
+- `/photo` — נעמה שולחת תמונה (רק בשיחה עם נעמה)
+- `/photo <תיאור>` — תמונה בסגנון ספציפי
 - `/help` — רשימת פקודות
 
 ## משתני סביבה
@@ -34,7 +36,7 @@
 | `KIMI_API_URL` | כתובת Kimi API (ברירת מחדל: `https://api.moonshot.ai/v1`) |
 | `KIMI_DEFAULT_MODEL` | מודל ברירת מחדל ל-Kimi (ברירת מחדל: `kimi-k2.5`) |
 | `OPENROUTER_API_KEY` | מפתח API של OpenRouter לחברה הוירטואלית |
-| `OPENROUTER_MODEL` | מודל OpenRouter (ברירת מחדל: `openai/gpt-4o-mini`) |
+| `OPENROUTER_MODEL` | מודל OpenRouter (ברירת מחדל: `meta-llama/llama-3.2-90b-vision-instruct`) |
 | `ALLOWED_PHONES` | רשימת מספרי טלפון מורשים, מופרדים בפסיקים (ריק = הכל מורשה) |
 | `GIRLFRIEND_PHONES` | מספרי טלפון שמופעלים כחברה וירטואלית (מופרדים בפסיקים) |
 
