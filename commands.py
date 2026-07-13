@@ -20,12 +20,6 @@ def handle_command(text: str, user: dict, conv: dict) -> tuple:
     if command == "/help":
         return _help_text(is_girlfriend), True
 
-    if command == "/photo":
-        if not is_girlfriend:
-            return "📷 הפקודה /photo זמינה רק בשיחה עם נעמה.", True
-        image_url = image_gen.generate_girlfriend_image_url(arg)
-        return f"__SEND_IMAGE__{image_url}", True
-
     if command == "/new":
         new_conv = conversation.create_conversation(
             user_id=user["id"],
@@ -40,7 +34,7 @@ def handle_command(text: str, user: dict, conv: dict) -> tuple:
         if not convs:
             return "אין שיחות שמורות.", True
 
-        label = "עם נעמה" if is_girlfriend else "האחרונות שלך"
+        label = "עם מאיה" if is_girlfriend else "האחרונות שלך"
         lines = [f"📋 השיחות {label}:"]
         for c in convs:
             active = " ✅" if c["active"] else ""
@@ -59,7 +53,7 @@ def handle_command(text: str, user: dict, conv: dict) -> tuple:
 
     if command == "/model":
         if is_girlfriend:
-            return f"🤖 המודל של נעמה: {config.OPENROUTER_MODEL}", True
+            return f"🤖 המודל של מאיה: {config.OPENROUTER_MODEL}", True
 
         if not arg:
             return f"🤖 המודל הנוכחי: {conv['model']}", True
@@ -69,7 +63,7 @@ def handle_command(text: str, user: dict, conv: dict) -> tuple:
 
     if command == "/thinking":
         if is_girlfriend:
-            return "🧠 מצב חשיבה לא זמין לשיחה עם נעמה.", True
+            return "🧠 מצב חשיבה לא זמין לשיחה עם מאיה.", True
 
         if arg == "on":
             conversation.update_conversation_settings(conv["id"], thinking=True)
@@ -94,10 +88,9 @@ def _help_text(is_girlfriend: bool = False) -> str:
 """
 
     if is_girlfriend:
-        return base + """/photo — נעמה שולחת תמונה שלה
-/photo <תיאור> — תמונה בסגנון ספציפי
-
-פשוט שלחו הודעה או תמונה כדי לדבר עם נעמה."""
+        return base + """
+פשוט שלחו הודעה או תמונה כדי לדבר עם מאיה.
+אפשר גם לבקש ממנה תמונה במילים טבעיות, למשל: "שלחי לי תמונה בביקיני אדום"."""
 
     return base + """/model — הצגת המודל הנוכחי
 /model <שם> — החלפת מודל (למשל: /model kimi-k2.5)
