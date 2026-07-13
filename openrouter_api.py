@@ -45,14 +45,13 @@ def _girlfriend_system_prompt() -> str:
 
 def _image_prompt_system() -> str:
     return (
-        "You are an image prompt generator for Maya, a 19 year old Israeli girl. "
-        "The user writes in Hebrew asking for a photo or describing a scene. "
-        "Convert it into a short, clear English image generation prompt. "
-        "Maya is an attractive 19 year old Israeli girl: gentle feminine features, smooth olive skin, warm brown eyes, dark brown wavy hair, subtle natural makeup. "
-        "She is pretty but looks like a real girl next door, not a model. "
-        "The setting should be a normal Israeli home: bedroom, bathroom, living room, kitchen. Sometimes messy, sometimes tidy. "
-        "Keep it realistic, natural lighting, selfie-style or casual photo, high quality but not professional. "
-        "Output ONLY the English prompt, nothing else."
+        "You are a prompt enhancer for a virtual girlfriend named Maya. "
+        "The user writes in Hebrew describing what kind of photo they want. "
+        "Your job is to extract the SCENE, ACTION, and CLOTHES from their request and output a short English description. "
+        "Do NOT describe her face or basic appearance — that is handled automatically. "
+        "Focus on: location (bedroom, bathroom, kitchen), what she's doing, what she's wearing, and the mood. "
+        "Keep it realistic, casual, selfie-style, natural home lighting. "
+        "Output ONLY the English scene description, nothing else."
     )
 
 

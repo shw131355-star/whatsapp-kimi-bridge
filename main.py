@@ -214,6 +214,9 @@ async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: st
             logger.info("Girlfriend command handled: %s", text.split()[0])
             if command_response.startswith("__SEND_IMAGE__"):
                 generated_url = command_response.replace("__SEND_IMAGE__", "")
+                if not generated_url:
+                    green_api.send_message(sender_phone, "מצטערת, לא הצלחתי ליצור את התמונה 💕")
+                    return
                 img_arg = text.split(maxsplit=1)[1] if len(text.split(maxsplit=1)) > 1 else ""
                 try:
                     caption = openrouter_api.generate_image_caption(img_arg, img_arg or "photo of Maya")
@@ -222,11 +225,10 @@ async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: st
                     caption = "הנה, רק בשבילך 😉"
                 success = False
                 try:
-                    img_response = httpx.get(generated_url, timeout=60.0)
-                    img_response.raise_for_status()
-                    if len(img_response.content) == 0:
-                        raise ValueError("Downloaded image is empty")
-                    success = green_api.send_file_by_upload(sender_phone, img_response.content, filename="image.jpg", caption=caption)
+                    img_bytes = image_gen.image_url_to_bytes(generated_url)
+                    if len(img_bytes) == 0:
+                        raise ValueError("Generated image is empty")
+                    success = green_api.send_file_by_upload(sender_phone, img_bytes, filename="image.jpg", caption=caption)
                 except Exception as e:
                     logger.warning("Image upload failed for /img, falling back to URL: %s", e)
                 if not success:
@@ -273,17 +275,21 @@ async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: st
             logger.warning("Failed to generate caption, using default: %s", e)
             caption_reply = "הנה, רק בשבילך 😉"
 
+        if not generated_url:
+            green_api.send_message(sender_phone, "מצטערת, נתקלתי בבעיה ביצירת התמונה. בוא ננסה שוב בעוד רגע 💕")
+            logger.error("Failed to generate image for %s", sender_phone)
+            return
+
         success = False
         try:
-            logger.info("Downloading generated image from %s", generated_url)
-            img_response = httpx.get(generated_url, timeout=60.0)
-            img_response.raise_for_status()
-            if len(img_response.content) == 0:
-                raise ValueError("Downloaded image is empty")
-            success = green_api.send_file_by_upload(sender_phone, img_response.content, filename="image.jpg", caption=caption_reply)
+            logger.info("Converting generated image to bytes")
+            img_bytes = image_gen.image_url_to_bytes(generated_url)
+            if len(img_bytes) == 0:
+                raise ValueError("Generated image is empty")
+            success = green_api.send_file_by_upload(sender_phone, img_bytes, filename="image.jpg", caption=caption_reply)
             logger.info("Image upload result for %s: %s", sender_phone, success)
         except Exception as e:
-            logger.warning("Image upload failed, falling back to URL: %s", e)
+            logger.warning("Image upload failed: %s", e)
 
         if not success:
             success = green_api.send_file_by_url(sender_phone, generated_url, caption_reply)
