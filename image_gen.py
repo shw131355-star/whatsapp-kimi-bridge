@@ -6,6 +6,9 @@ import config
 logger = logging.getLogger(__name__)
 
 
+IMAGE_MODEL = "google/gemini-2.5-flash-image"
+
+
 def _base_appearance() -> str:
     return (
         "Maya, a pretty 19 year old Israeli girl, "
@@ -16,23 +19,23 @@ def _base_appearance() -> str:
 
 
 def generate_girlfriend_image_url(english_prompt: str = "", seed: int = None) -> str:
-    """Generate an image via OpenRouter and return a data URL."""
+    """Generate an image via OpenRouter Gemini Flash Image and return a data URL."""
     base = _base_appearance()
 
     if english_prompt:
         full_prompt = (
             f"Realistic casual phone selfie of {base}, "
             f"{english_prompt}, natural home lighting, no filter, "
-            f"same face in every photo, consistent facial features"
+            f"authentic Israeli home interior"
         )
     else:
         full_prompt = (
             f"Realistic casual phone selfie of {base}, "
             f"in her bedroom, natural home lighting, no filter, "
-            f"same face in every photo, consistent facial features"
+            f"authentic Israeli home interior"
         )
 
-    logger.info("Generating OpenRouter image for prompt: %s", english_prompt)
+    logger.info("Generating Gemini image for prompt: %s", english_prompt)
 
     url = f"{config.OPENROUTER_API_URL}/chat/completions"
     headers = {
@@ -42,7 +45,7 @@ def generate_girlfriend_image_url(english_prompt: str = "", seed: int = None) ->
         "X-Title": "WhatsApp Kimi Bridge"
     }
     payload = {
-        "model": "openai/gpt-5-image-mini",
+        "model": IMAGE_MODEL,
         "messages": [{"role": "user", "content": full_prompt}]
     }
 
@@ -50,11 +53,18 @@ def generate_girlfriend_image_url(english_prompt: str = "", seed: int = None) ->
         response = httpx.post(url, headers=headers, json=payload, timeout=120.0)
         response.raise_for_status()
         data = response.json()
-        image_data = data["choices"][0]["message"]["images"][0]["image_url"]["url"]
-        logger.info("OpenRouter image generated successfully")
-        return image_data
+        message = data["choices"][0]["message"]
+
+        if message.get("images"):
+            image_data = message["images"][0]["image_url"]["url"]
+            logger.info("Gemini image generated successfully")
+            return image_data
+
+        # If no image returned, log the refusal/content
+        logger.warning("Gemini returned no image. Content: %s", message.get("content", "")[:200])
+        return ""
     except Exception as e:
-        logger.exception("OpenRouter image generation failed")
+        logger.exception("Gemini image generation failed")
         return ""
 
 
