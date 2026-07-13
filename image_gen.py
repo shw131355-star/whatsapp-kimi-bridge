@@ -1,4 +1,5 @@
 import logging
+import random
 import urllib.parse
 import config
 
@@ -17,7 +18,7 @@ def generate_girlfriend_image_url(english_prompt: str = "") -> str:
     else:
         full_prompt = base_prompt
 
-    seed = 42
+    seed = random.randint(1, 1000000)
     width = 1024
     height = 1024
 
@@ -27,5 +28,5 @@ def generate_girlfriend_image_url(english_prompt: str = "") -> str:
         f"?seed={seed}&width={width}&height={height}&nologo=true"
     )
 
-    logger.info("Generated Maya image URL for prompt: %s", english_prompt)
+    logger.info("Generated Maya image URL for prompt: %s (seed=%s)", english_prompt, seed)
     return url

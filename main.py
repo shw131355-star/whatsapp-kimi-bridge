@@ -209,6 +209,8 @@ async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: st
                 try:
                     img_response = httpx.get(generated_url, timeout=60.0)
                     img_response.raise_for_status()
+                    if len(img_response.content) == 0:
+                        raise ValueError("Downloaded image is empty")
                     success = green_api.send_file_by_upload(sender_phone, img_response.content, filename="image.jpg", caption=caption)
                 except Exception as e:
                     logger.warning("Image upload failed for /img, falling back to URL: %s", e)
@@ -249,6 +251,8 @@ async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: st
             logger.info("Downloading generated image from %s", generated_url)
             img_response = httpx.get(generated_url, timeout=60.0)
             img_response.raise_for_status()
+            if len(img_response.content) == 0:
+                raise ValueError("Downloaded image is empty")
             success = green_api.send_file_by_upload(sender_phone, img_response.content, filename="image.jpg", caption=caption_reply)
             logger.info("Image upload result for %s: %s", sender_phone, success)
         except Exception as e:
