@@ -163,14 +163,19 @@ def _is_photo_request(text: str) -> bool:
     keywords = [
         "תמונה", "ביקיני", "בגד ים", "בגדים", "תלבוש", "תראי", "תשלחי",
         "תצלמי", "תחשפי", "תתפשטי", "הראי", "שלחי לי", "תתני לי",
-        "אני רוצה לראות", "צילום", "selfie", "סלפי"
+        "אני רוצה לראות", "צילום", "selfie", "סלפי", "תשלחי לי",
+        "תחזירי", "מראה", "ויזואלי", "הצגי", "תציגי", "תמונות",
+        "תצלום", "תצטלמת", "פוזה", "פוזה", "מצלמה", "אלבום"
     ]
     lowered = text.lower()
     return any(k in lowered for k in keywords)
 
 
 def _extract_photo_description(text: str) -> str:
-    cleaned = re.sub(r"\b(תשלחי|שלחי לי|תראי|הראי|תצלמי|תמונה|selfie|סלפי)\b", "", text, flags=re.IGNORECASE)
+    cleaned = re.sub(
+        r"\b(תשלחי|שלחי לי|תראי|הראי|תצלמי|תמונה|selfie|סלפי|תשלחי|תחזירי|הצגי|תציגי)\b",
+        "", text, flags=re.IGNORECASE
+    )
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
     return cleaned or "realistic photo of Maya"
 
@@ -219,12 +224,21 @@ async def _handle_girlfriend_message(sender_phone: str, text: str, image_url: st
         english_prompt = openrouter_api.generate_image_prompt(description)
         generated_url = image_gen.generate_girlfriend_image_url(english_prompt)
 
-        caption_reply = openrouter_api.get_response(
-            [{"role": "user", "content": text}, {"role": "assistant", "content": "הנה, אהובי 💕"}]
-        )
-        green_api.send_file_by_url(sender_phone, generated_url, caption_reply)
-        conversation.add_message(conv["id"], "assistant", f"[תמונה] {caption_reply}")
-        logger.info("Sent generated image to %s", sender_phone)
+        try:
+            caption_reply = openrouter_api.get_response(
+                [{"role": "user", "content": text}, {"role": "assistant", "content": "הנה, אהובי 💕"}]
+            )
+        except Exception as e:
+            logger.warning("Failed to generate caption, using default: %s", e)
+            caption_reply = "הנה בשבילך, אהובי 💕"
+
+        success = green_api.send_file_by_url(sender_phone, generated_url, caption_reply)
+        if success:
+            conversation.add_message(conv["id"], "assistant", f"[תמונה] {caption_reply}")
+            logger.info("Sent generated image to %s", sender_phone)
+        else:
+            green_api.send_message(sender_phone, "מצטערת, נתקלתי בבעיה בשליחת התמונה. בוא ננסה שוב בעוד רגע 💕")
+            logger.error("Failed to send generated image to %s", sender_phone)
         return
 
     if conv["title"] == "שיחה חדשה":

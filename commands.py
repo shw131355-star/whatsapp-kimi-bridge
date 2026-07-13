@@ -17,6 +17,16 @@ def handle_command(text: str, user: dict, conv: dict) -> tuple:
     personality = conv.get("personality", "kimi")
     is_girlfriend = personality == "girlfriend"
 
+    if command == "/img" or command == "/image":
+        if not arg:
+            return "⚠️ השתמשו: /img <תיאור התמונה שאתם רוצים>", True
+        if is_girlfriend:
+            import openrouter_api
+            english_prompt = openrouter_api.generate_image_prompt(arg)
+            generated_url = image_gen.generate_girlfriend_image_url(english_prompt)
+            return f"__SEND_IMAGE__{generated_url}", True
+        return "🤖 יצירת תמונות זמינה רק למאיה.", True
+
     if command == "/help":
         return _help_text(is_girlfriend), True
 
@@ -88,7 +98,8 @@ def _help_text(is_girlfriend: bool = False) -> str:
 """
 
     if is_girlfriend:
-        return base + """
+        return base + """/img <תיאור> — צור תמונה ישירות (למשל: /img מאיה בביקיני אדום)
+
 פשוט שלחו הודעה או תמונה כדי לדבר עם מאיה.
 אפשר גם לבקש ממנה תמונה במילים טבעיות, למשל: "שלחי לי תמונה בביקיני אדום"."""
 

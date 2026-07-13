@@ -49,7 +49,8 @@ def send_file_by_url(chat_id: str, file_url: str, caption: str = "") -> bool:
 
     payload = {
         "chatId": chat_id,
-        "urlFile": file_url
+        "urlFile": file_url,
+        "fileName": "image.jpg"
     }
     if caption:
         payload["caption"] = caption
@@ -63,6 +64,33 @@ def send_file_by_url(chat_id: str, file_url: str, caption: str = "") -> bool:
         return response.status_code == 200
     except Exception as e:
         logger.exception("Error sending file")
+        return False
+
+
+def send_file_by_upload(chat_id: str, file_bytes: bytes, filename: str = "image.jpg", caption: str = "") -> bool:
+    if not file_bytes:
+        logger.warning("Refusing to send empty file bytes")
+        return False
+
+    url = f"{_base_url()}/waInstance{config.GREEN_API_INSTANCE_ID}/sendFileByUpload/{config.GREEN_API_TOKEN}"
+
+    if not chat_id.endswith("@c.us"):
+        chat_id = f"{chat_id}@c.us"
+
+    files = {"file": (filename, file_bytes, "image/jpeg")}
+    data = {"chatId": chat_id}
+    if caption:
+        data["caption"] = caption
+
+    logger.info("Sending WhatsApp file upload to %s", chat_id)
+    try:
+        response = httpx.post(url, data=data, files=files, timeout=120.0)
+        logger.info("Green API send_file_by_upload status: %s", response.status_code)
+        if response.status_code != 200:
+            logger.warning("Green API send_file_by_upload body: %s", response.text)
+        return response.status_code == 200
+    except Exception as e:
+        logger.exception("Error sending file upload")
         return False
 
 
