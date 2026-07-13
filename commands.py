@@ -1,6 +1,7 @@
 import conversation
 import kimi_api
 import config
+import image_gen
 
 
 def handle_command(text: str, user: dict, conv: dict) -> tuple:
@@ -18,6 +19,12 @@ def handle_command(text: str, user: dict, conv: dict) -> tuple:
 
     if command == "/help":
         return _help_text(is_girlfriend), True
+
+    if command == "/photo":
+        if not is_girlfriend:
+            return "📷 הפקודה /photo זמינה רק בשיחה עם נעמה.", True
+        image_url = image_gen.generate_girlfriend_image_url(arg)
+        return f"__SEND_IMAGE__{image_url}", True
 
     if command == "/new":
         new_conv = conversation.create_conversation(
@@ -87,7 +94,9 @@ def _help_text(is_girlfriend: bool = False) -> str:
 """
 
     if is_girlfriend:
-        return base + """
+        return base + """/photo — נעמה שולחת תמונה שלה
+/photo <תיאור> — תמונה בסגנון ספציפי
+
 פשוט שלחו הודעה או תמונה כדי לדבר עם נעמה."""
 
     return base + """/model — הצגת המודל הנוכחי
