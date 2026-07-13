@@ -7,7 +7,7 @@ def normalize_phone(phone: str) -> str:
     return phone.replace("+", "").replace(" ", "").replace("-", "")
 
 
-def get_or_create_user(phone: str, default_model: str = "kimi-k2", default_thinking: bool = False) -> Dict[str, Any]:
+def get_or_create_user(phone: str, default_model: str = "kimi-k2.5", default_thinking: bool = False) -> Dict[str, Any]:
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -28,20 +28,20 @@ def get_or_create_user(phone: str, default_model: str = "kimi-k2", default_think
     return dict(user)
 
 
-def create_conversation(user_id: int, model: str, thinking: bool, title: str = "שיחה חדשה") -> Dict[str, Any]:
+def create_conversation(user_id: int, model: str, thinking: bool, title: str = "שיחה חדשה", personality: str = "kimi") -> Dict[str, Any]:
     conn = get_connection()
     cursor = conn.cursor()
 
     now = datetime.utcnow().isoformat()
 
-    cursor.execute("UPDATE conversations SET active = 0 WHERE user_id = ?", (user_id,))
+    cursor.execute("UPDATE conversations SET active = 0 WHERE user_id = ? AND personality = ?", (user_id, personality))
 
     cursor.execute(
         """
-        INSERT INTO conversations (user_id, title, model, thinking, active, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO conversations (user_id, title, model, personality, thinking, active, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (user_id, title, model, int(thinking), 1, now, now)
+        (user_id, title, model, personality, int(thinking), 1, now, now)
     )
     conn.commit()
 
@@ -53,37 +53,48 @@ def create_conversation(user_id: int, model: str, thinking: bool, title: str = "
     return dict(conversation)
 
 
-def get_active_conversation(user_id: int, model: str, thinking: bool) -> Dict[str, Any]:
+def get_active_conversation(user_id: int, model: str, thinking: bool, personality: str = "kimi") -> Dict[str, Any]:
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute(
-        "SELECT * FROM conversations WHERE user_id = ? AND active = 1 LIMIT 1",
-        (user_id,)
+        "SELECT * FROM conversations WHERE user_id = ? AND active = 1 AND personality = ? LIMIT 1",
+        (user_id, personality)
     )
     conversation = cursor.fetchone()
 
     if conversation is None:
         conn.close()
-        return create_conversation(user_id, model, thinking)
+        return create_conversation(user_id, model, thinking, personality=personality)
 
     conn.close()
     return dict(conversation)
 
 
-def list_conversations(user_id: int, limit: int = 10) -> List[Dict[str, Any]]:
+def list_conversations(user_id: int, personality: Optional[str] = None, limit: int = 10) -> List[Dict[str, Any]]:
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute(
-        """
-        SELECT * FROM conversations
-        WHERE user_id = ?
-        ORDER BY updated_at DESC
-        LIMIT ?
-        """,
-        (user_id, limit)
-    )
+    if personality:
+        cursor.execute(
+            """
+            SELECT * FROM conversations
+            WHERE user_id = ? AND personality = ?
+            ORDER BY updated_at DESC
+            LIMIT ?
+            """,
+            (user_id, personality, limit)
+        )
+    else:
+        cursor.execute(
+            """
+            SELECT * FROM conversations
+            WHERE user_id = ?
+            ORDER BY updated_at DESC
+            LIMIT ?
+            """,
+            (user_id, limit)
+        )
     conversations = [dict(row) for row in cursor.fetchall()]
 
     conn.close()
@@ -118,7 +129,8 @@ def switch_conversation(user_id: int, conversation_id: int) -> Optional[Dict[str
         conn.close()
         return None
 
-    cursor.execute("UPDATE conversations SET active = 0 WHERE user_id = ?", (user_id,))
+    personality = conversation["personality"]
+    cursor.execute("UPDATE conversations SET active = 0 WHERE user_id = ? AND personality = ?", (user_id, personality))
     cursor.execute(
         "UPDATE conversations SET active = 1, updated_at = ? WHERE id = ?",
         (datetime.utcnow().isoformat(), conversation_id)
@@ -129,15 +141,15 @@ def switch_conversation(user_id: int, conversation_id: int) -> Optional[Dict[str
     return get_conversation_by_id(conversation_id, user_id)
 
 
-def add_message(conversation_id: int, role: str, content: str):
+def add_message(conversation_id: int, role: str, content: str, image_url: str = ""):
     conn = get_connection()
     cursor = conn.cursor()
 
     now = datetime.utcnow().isoformat()
 
     cursor.execute(
-        "INSERT INTO messages (conversation_id, role, content, created_at) VALUES (?, ?, ?, ?)",
-        (conversation_id, role, content, now)
+        "INSERT INTO messages (conversation_id, role, content, image_url, created_at) VALUES (?, ?, ?, ?, ?)",
+        (conversation_id, role, content, image_url or None, now)
     )
 
     cursor.execute(
